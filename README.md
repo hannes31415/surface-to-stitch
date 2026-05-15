@@ -31,7 +31,7 @@ $$\frac{n}{N} \int_0^1 \sqrt{1 + \left(\frac{dz}{dr}\right)^2} \, dr = \int_0^{R
 
 For a sphere (*z = 1 - √(1 - r²)*), this simplifies beautifully to a closed form:
 
-$$R_n = \sin\!\left(\frac{\pi n}{2N}\right)$$
+$$R_n = \sin\left(\frac{\pi n}{2N}\right)$$
 
 For arbitrary surfaces, the bisection method finds *R_n* numerically.
 
