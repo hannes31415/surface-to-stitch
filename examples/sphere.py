@@ -1,8 +1,5 @@
 """
-examples/sphere.py
-------------------
-Reproduce the sphere pattern from the original IB IA paper,
-with N=10 loops and a unit hemisphere profile.
+Reproduce a sphere design with N=10 loops and a unit hemisphere profile.
 """
 
 import numpy as np
