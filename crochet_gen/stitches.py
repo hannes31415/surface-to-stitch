@@ -1,6 +1,4 @@
 """
-stitches.py
------------
 Converts geometric loop radii into discrete stitch counts.
 
 Each loop is a circle of radius R_n (scaled to real yarn dimensions).
@@ -65,13 +63,7 @@ def radii_to_stitch_counts(
     n_loops: int,
 ) -> list[int]:
     """
-    Convert loop radii to integer stitch counts.
-
-    Steps:
-      1. Compute the scaling factor from unit radius to real centimetres.
-      2. Scale each radius.
-      3. Compute loop circumference = 2π * R_scaled.
-      4. Divide by stitch length and floor.
+    Convert loop radii to integer stitch counts by computing the scaling factor from unit radius to real centimetres, scaling each radius, computing loop circumference = 2π * R_scaled, and then divide by stitch length and floor.
 
     Parameters
     ----------
