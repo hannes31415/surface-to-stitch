@@ -1,6 +1,4 @@
 """
-cli.py
-------
 Command-line interface for the crochet pattern generator.
 
 Usage
