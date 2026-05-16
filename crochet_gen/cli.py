@@ -22,9 +22,6 @@ import numpy as np
 from . import generate
 from .stitches import YarnProfile
 
-
-# ── Preset surface functions ──────────────────────────────────────────────────
-
 PRESETS: dict[str, tuple] = {
     "sphere": (
         lambda r: 1 - np.sqrt(max(1 - r**2, 0)),
@@ -132,10 +129,8 @@ def resolve_surface(name: str, domain_override: float | None):
         domain = domain_override if domain_override is not None else default_domain
         return f, domain, name.capitalize()
 
-    # Treat as a Python expression in r
     try:
         f = eval(f"lambda r: {name}", {"np": np, "__builtins__": {}})
-        # Quick smoke test
         _ = f(0.5)
     except Exception as e:
         print(f"Error: could not parse surface expression '{name}': {e}", file=sys.stderr)
