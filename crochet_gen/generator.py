@@ -1,21 +1,8 @@
 """
-generator.py
-------------
 High-level API for the crochet pattern generator.
 
-This is the main entry point. Import and call `generate` with a surface
-function and a few parameters to get back a complete pattern + visualizations.
+Import and call `generate` with a surface function and a few parameters to get back a complete pattern + visualizations.
 
-Example
--------
->>> from crochet_gen import generate
->>> import numpy as np
->>>
->>> def sphere(r):
-...     return 1 - np.sqrt(1 - r**2)
->>>
->>> result = generate(sphere, domain=1.0, n_loops=10, closed=True, name="Sphere")
->>> print(result.pattern_text)
 """
 
 from __future__ import annotations
@@ -32,22 +19,6 @@ from .visualization import plot_surface_with_loops, plot_stitch_profile
 
 @dataclass
 class PatternResult:
-    """
-    Output of the pattern generator.
-
-    Attributes
-    ----------
-    loop_radii : list[float]
-        Radial position of each loop (unit scale).
-    stitch_counts : list[int]
-        Integer stitch count per loop.
-    special_positions : list[list[int]]
-        Stitch indices of inc/dec stitches per loop.
-    pattern_lines : list[str]
-        Written pattern, one instruction per line.
-    pattern_text : str
-        Full pattern as a single printable string.
-    """
     loop_radii: list[float]
     stitch_counts: list[int]
     special_positions: list[list[int]]
@@ -66,8 +37,6 @@ def generate(
     save_plot: Optional[str] = None,
 ) -> PatternResult:
     """
-    Generate a crochet pattern for any rotationally symmetric surface z = f(r).
-
     Parameters
     ----------
     f : callable
