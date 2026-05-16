@@ -101,7 +101,7 @@ print(result.pattern_text)
 python -m crochet_gen.cli sphere --n-loops 10 --closed
 python -m crochet_gen.cli cos --domain 9 --n-loops 15 --visualize
 
-# Custom expression (numpy available as np)
+# Custom expression
 python -m crochet_gen.cli "np.sin(r) + 0.3*r" --domain 6 --n-loops 12 --name "Sine Wave"
 
 # Save output
