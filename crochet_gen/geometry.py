@@ -1,6 +1,4 @@
 """
-geometry.py
------------
 Core geometric computations for the crochet pattern generator.
 
 Given a rotationally symmetric 3D surface z = f(r), this module computes
