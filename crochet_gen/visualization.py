@@ -1,6 +1,4 @@
 """
-visualization.py
-----------------
 Produces visual outputs for the crochet pattern generator:
 
   1. A 3D surface plot of the profile function z = f(r), revolved
@@ -8,7 +6,7 @@ Produces visual outputs for the crochet pattern generator:
   2. A top-down 2D loop diagram showing stitch counts and special
      stitch positions per loop.
 
-Uses only matplotlib (no extra dependencies).
+Uses only matplotlib.
 """
 
 from __future__ import annotations
