@@ -2,9 +2,7 @@
 
 **A mathematically rigorous crochet pattern generator for rotationally symmetric 3D surfaces.**
 
-Given any surface *z = f(r)* with rotational symmetry about the z-axis, this tool produces a complete, step-by-step crochet pattern — precise stitch counts, increase/decrease placement, and angular offsets — derived entirely from calculus and number theory, not guesswork.
-
-This project originated as an IB Mathematics: Analysis & Approaches HL Internal Assessment. The original paper is included in [`paper/`](paper/).
+Given any surface *z = f(r)* in cylindrical coordintes with rotational symmetry about the z-axis, this tool produces a complete, step-by-step crochet pattern. Modern geometric crochet designs are made with guesswork, but this method includes precise stitch counts, increase/decrease placement, and angular offsets, all derived entirely from calculus and number theory.
 
 ---
 
@@ -13,17 +11,17 @@ This project originated as an IB Mathematics: Analysis & Approaches HL Internal 
 Crocheting a 3D shape requires decisions that people usually approximate:
 
 1. **How many stitches per loop?** (how much to expand or contract)
-2. **Where in the loop do you place the increases/decreases?** (to preserve rotational symmetry)
+2. **Where in the loop do you place the increases/decreases?** (to optimize the preservation of rotational symmetry)
 
 This tool solves both problems analytically.
 
 ---
 
-## The Math (in brief)
+## The Math (in short)
 
-### Loop positions — arc length parameterization
+### Loop positions: arc length parameterization
 
-Crochet loops follow the *surface*, not a flat grid. So the correct question is: at what radius *R_n* does the *n*-th loop sit, such that the arc length between consecutive loops is constant?
+Crochet loops follow the *surface* of a shape, not a flat grid. So the correct question is: at what radius *R_n* does the *n*-th loop sit, such that the arc length between consecutive loops is constant?
 
 This reduces to solving:
 
@@ -33,9 +31,9 @@ For a sphere (*z = 1 - √(1 - r²)*), this simplifies beautifully to a closed f
 
 $$R_n = \sin\left(\frac{\pi n}{2N}\right)$$
 
-For arbitrary surfaces, the bisection method finds *R_n* numerically.
+For arbitrary surfaces, the bisection method for integration finds *R_n* numerically.
 
-### Optimal increase/decrease placement — number theory
+### Optimal increase/decrease placement: number theory
 
 When transitioning between a loop with *j* special stitches and one with *k*, the increases/decreases should be placed as far as possible from the previous layer's. The optimal angular offset is:
 
@@ -50,19 +48,17 @@ This follows from a collision argument: in one full revolution, *jk* overlaps oc
 ```
 crochet_gen/
 ├── geometry.py       # Arc length computation + bisection root-finding
-├── stitches.py       # Radius → integer stitch count conversion
+├── stitches.py       # Radius -> integer stitch count conversion
 ├── symmetry.py       # Angular offset computation (lcm-based)
 ├── pattern.py        # Writes the human-readable crochet pattern
 ├── visualization.py  # 3D surface + stitch profile plots
-├── generator.py      # High-level API (orchestrates all steps)
+├── generator.py      # High-level API
 └── cli.py            # Command-line interface
 
 examples/
-├── sphere.py         # Reproduces the N=10 sphere from the paper
+├── sphere.py         # sphere, N=10
 └── cosine.py         # cos(r) surface, N=15
 
-paper/
-└── IA_final.pdf      # Original IB IA paper
 ```
 
 ---
@@ -147,17 +143,15 @@ Loop 19: sc5
 Chain Off
 ```
 
-The pattern was physically crocheted to verify correctness (see paper).
+The pattern was physically crocheted to verify correctness.
 
 ---
 
 ## Limitations & Future Work
 
-- **Rotational symmetry required.** The current approach assumes *z = f(r)*, i.e. the surface is independent of *θ*. Generalising to asymmetric surfaces would require a density-function approach to stitch placement — a significantly harder problem involving multivariable calculus.
+- **Rotational symmetry required.** The current approach assumes *z = f(r)*, i.e. the surface is independent of *θ*. Generalising to asymmetric surfaces would require a density-function approach to stitch placement: a significantly harder problem involving multivariable calculus that I'm currently working on.
 
 - **Yarn stretch.** The scaling factor is measured from a flat swatch. Yarn stretch under tension could be modelled more precisely.
-
-- **Web interface.** A natural next step is a browser-based tool where you sketch or input a function, tune parameters, and download a printable pattern — bringing this to the broader crafting community without requiring Python.
 
 - **Other stitch types.** Half-double crochet, treble crochet, and bobble stitches all have different height-to-width ratios. Extending the `YarnProfile` to support multiple stitch types would expand the design space considerably.
 
@@ -165,12 +159,10 @@ The pattern was physically crocheted to verify correctness (see paper).
 
 ## Citation
 
-If you use this in a project, a nod would be appreciated:
+If you use this in a project, a nod would be appreciated!
 
 ```
-lrk700. "Designing a Crochet Pattern For a 3-Dimensional Function
-with Rotational Symmetry." IB Mathematics AA HL IA, 2025.
-```
+
 
 ---
 
