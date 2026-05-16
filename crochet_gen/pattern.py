@@ -1,7 +1,5 @@
 """
-pattern.py
-----------
-Converts numeric stitch data into a human-readable crochet pattern.
+Converts numeric stitch data into a human-usable crochet pattern.
 
 Each loop is expressed as a sequence of instructions like:
     sc3, inc, sc5, inc, sc4
