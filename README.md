@@ -162,10 +162,3 @@ The pattern was physically crocheted to verify correctness.
 If you use this in a project, a nod would be appreciated!
 
 ```
-
-
----
-
-## License
-
-MIT
