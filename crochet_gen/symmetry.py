@@ -1,6 +1,4 @@
 """
-symmetry.py
------------
 Computes optimal angular offsets for increase/decrease stitches.
 
 When transitioning between loops with different stitch counts, the
