@@ -1,8 +1,5 @@
 """
-examples/cosine.py
-------------------
-Generate a pattern for z = cos(r) over domain [0, 9],
-reproducing the second example from the paper (N=15).
+Generate a pattern for z = cos(r) over domain [0, 9] at N=15.
 """
 
 import numpy as np
