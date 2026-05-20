@@ -71,20 +71,12 @@ def generate(
     if yarn is None:
         yarn = YarnProfile()
 
-    # Step 1: Find loop positions via arc-length parameterization
     radii = compute_loop_radii(f, n_loops, domain)
-
-    # Step 2: Convert radii to integer stitch counts
     counts = radii_to_stitch_counts(radii, f, domain, yarn, n_loops)
-
-    # Step 3: Compute optimal inc/dec positions
     positions = special_stitch_positions(counts)
-
-    # Step 4: Generate written pattern
     pattern_lines = generate_pattern(counts, positions, closed=closed, name=name)
     pattern_text = pattern_to_string(pattern_lines)
 
-    # Step 5 (optional): Visualize
     if visualize or save_plot:
         surface_path = f"{save_plot}_surface.png" if save_plot else None
         profile_path = f"{save_plot}_profile.png" if save_plot else None
