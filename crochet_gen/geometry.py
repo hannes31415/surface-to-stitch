@@ -15,10 +15,8 @@ from typing import Callable
 
 def arc_length_integrand(r: float, f: Callable[[float], float], dr: float = 1e-6) -> float:
     """
-    Integrand for the arc length formula: sqrt(1 + (dz/dr)^2).
-
-    Uses central finite differences to approximate dz/dr, making this
-    compatible with any callable f, not just analytically differentiable ones.
+    Arc-length integrand for z = f(r).
+    Approximates dz/dr via central differences so f need not be analytic.
 
     Parameters
     ----------
