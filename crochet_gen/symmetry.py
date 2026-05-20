@@ -1,17 +1,12 @@
 """
-Computes optimal angular offsets for increase/decrease stitches.
+Compute angular offsets for increase/decrease stitches.
 
-When transitioning between loops with different stitch counts, the
-"special" stitches (increases or decreases) should be:
-  1. Evenly spaced *within* each loop (angle β = 2π/k apart).
-  2. Maximally offset from the special stitches in the *previous* loop.
+Special stitches should be evenly spaced within a loop and offset from
+those in the previous loop to avoid alignment.
 
-The optimal inter-loop offset is φ = π / lcm(j, k), where j and k are
-the number of special stitches in the previous and current loops,
-respectively. This is derived from the collision argument in the paper:
-in one full revolution, jk collisions occur, but simultaneous collisions
-reduce the effective count by gcd(j,k), giving lcm(j,k) distinct
-collision events and an optimal half-spacing of π/lcm(j,k).
+For loops with j and k special stitches, the optimal offset is
+φ = π / lcm(j, k)
+derived from the spacing between distinct stitch-alignment events.
 """
 
 from __future__ import annotations
@@ -39,8 +34,8 @@ def special_stitch_counts(stitch_counts: list[int]) -> list[tuple[int, int]]:
         (j, k) pairs for each loop.
     """
     n = len(stitch_counts)
-    jk = [(0, 0)]  # loop 1: no previous loops
-    jk.append((0, stitch_counts[0]))  # loop 2: j=0, k=stitches in loop 1
+    jk = [(0, 0)]
+    jk.append((0, stitch_counts[0]))
 
     for i in range(n - 2):
         j = abs(stitch_counts[i] - stitch_counts[i + 1])
@@ -97,23 +92,21 @@ def compute_offsets(
     jk = special_stitch_counts(stitch_counts)
     n = len(stitch_counts)
 
-    # β: angular spacing between special stitches within each loop
     beta = []
     for i in range(n):
         k = jk[i][1]
         beta.append((2 * math.pi / k) if k != 0 else 0.0)
 
-    # Raw per-loop offsets
     phi_raw = [optimal_offset(j, k) for j, k in jk]
 
-    # Cumulative offsets
+    # cumulative offsets
     phi_cumulative = []
     running = 0.0
     for phi in phi_raw:
         running += phi
         phi_cumulative.append(running)
 
-    # Reduced: map into [0, β) so the first special stitch is as early as possible
+    # reduced: map into [0, β) so the first special stitch is as early as possible
     phi_reduced = []
     for i in range(n):
         if beta[i] != 0:
@@ -166,7 +159,7 @@ def special_stitch_positions(
             angles.append(angle)
             angle += beta[i]
 
-        # Convert angles to stitch indices
+        # convert angles to stitch indices
         total = stitch_counts[i]
         indices = sorted(set(
             round(a / (2 * math.pi) * total) % total
