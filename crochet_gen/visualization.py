@@ -68,7 +68,6 @@ def plot_surface_with_loops(
     fig = plt.figure(figsize=(14, 6), facecolor="#0f0f0f")
     gs = GridSpec(1, 2, figure=fig, wspace=0.05)
 
-    # --- 3D surface ---
     ax3d = fig.add_subplot(gs[0], projection="3d")
     ax3d.set_facecolor("#0f0f0f")
 
@@ -81,7 +80,6 @@ def plot_surface_with_loops(
         antialiased=True,
     )
 
-    # Draw loop rings
     theta = np.linspace(0, 2 * math.pi, 200)
     cmap = plt.cm.plasma
     n = len(loop_radii)
@@ -108,7 +106,6 @@ def plot_surface_with_loops(
         pane.set_edgecolor("#222")
     ax3d.set_title(title, color="white", fontsize=13, pad=12, fontfamily="monospace")
 
-    # --- 2D loop diagram (top-down, r vs stitch count) ---
     ax2d = fig.add_subplot(gs[1])
     ax2d.set_facecolor("#0f0f0f")
 
@@ -116,7 +113,6 @@ def plot_surface_with_loops(
         color = cmap(i / max(n - 1, 1))
         circle = plt.Circle((0, 0), r, color=color, fill=False, linewidth=1.5, alpha=0.8)
         ax2d.add_patch(circle)
-        # Label stitch count at the rightmost point
         ax2d.text(
             r + domain * 0.02, 0,
             str(sc),
@@ -135,7 +131,6 @@ def plot_surface_with_loops(
     for spine in ax2d.spines.values():
         spine.set_edgecolor("#333")
 
-    # Colorbar
     sm = plt.cm.ScalarMappable(cmap=cmap, norm=plt.Normalize(vmin=1, vmax=n))
     sm.set_array([])
     cbar = fig.colorbar(sm, ax=ax2d, shrink=0.6, pad=0.02)
@@ -188,7 +183,6 @@ def plot_stitch_profile(
     for spine in ax.spines.values():
         spine.set_edgecolor("#333")
 
-    # Annotate bars
     for i, v in enumerate(stitch_counts):
         ax.text(i + 1, v + 0.3, str(v), ha="center", va="bottom",
                 color="#ccc", fontsize=8, fontfamily="monospace")
