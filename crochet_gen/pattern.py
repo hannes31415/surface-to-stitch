@@ -74,7 +74,7 @@ def build_loop_instructions(
     elif stitch_count < prev_stitch_count:
         special = "dec"
     else:
-        special = None  # no special stitches needed
+        special = None
 
     pos_set = set(special_positions)
     steps: list[str] = []
@@ -85,7 +85,7 @@ def build_loop_instructions(
             steps.append(special)
             i += 1
         else:
-            # Collect a run of plain single crochets
+            # run single crochets
             run = 0
             while i < stitch_count and not (special and i in pos_set):
                 run += 1
@@ -129,7 +129,6 @@ def generate_pattern(
 
     lines.append("Chain On")
 
-    # --- First half ---
     prev = 0
     for i, count in enumerate(stitch_counts):
         instr = build_loop_instructions(
@@ -141,16 +140,13 @@ def generate_pattern(
         lines.append(str(instr))
         prev = count
 
-    # --- Mirror for closed shapes ---
     if closed:
         n = len(stitch_counts)
-        # The equator loop (last in first half) is not repeated
-        for j, i in enumerate(range(n - 2, -1, -1)):
+        for j, i in enumerate(range(n - 2, -1, -1)): # don't want to repeat 'equator' loops when mirroring
             mirror_count = stitch_counts[i]
             mirror_prev = stitch_counts[i + 1]  # decreasing now
             loop_num = n + j + 1
 
-            # Flip inc <-> dec by swapping count/prev
             instr = build_loop_instructions(
                 loop_number=loop_num,
                 stitch_count=mirror_count,
