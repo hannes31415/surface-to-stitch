@@ -3,1012 +3,646 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>surface-to-stitch — pattern generator</title>
-<link href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<title>surface-to-stitch — crochet patterns from surfaces of revolution</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
   :root {
-    --bg: #07100a;
-    --surface: #0b160e;
-    --surface2: #0f1c12;
-    --border: #162019;
-    --border2: #1e2e21;
-    --accent: #84cc16;
-    --accent2: #bef264;
-    --warm: #f59e6b;
-    --text: #dde4f0;
-    --muted: #4d6455;
-    --dim: #1a2d1e;
-    --green: #4ade80;
-    --code-bg: #080f0a;
-    --error: #f87171;
+    --paper:      #f6f5f1;
+    --raised:     #ffffff;
+    --sunk:       #efede7;
+    --ink:        #1c1b18;
+    --muted:      #5f5b52;
+    --faint:      #8b867b;
+    --rule:       #dfdbd2;
+    --rule-soft:  #e9e6df;
+    --inc:        #29467f;
+    --dec:        #a3402f;
+    --focus:      #29467f;
+
+    --sans: 'Archivo', system-ui, sans-serif;
+    --mono: 'IBM Plex Mono', ui-monospace, monospace;
+
+    --col: 336px;
   }
 
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  html { scroll-behavior: smooth; }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --paper:     #1a1b19;
+      --raised:    #222421;
+      --sunk:      #151614;
+      --ink:       #e9e7e0;
+      --muted:     #9b968b;
+      --faint:     #767167;
+      --rule:      #34372f;
+      --rule-soft: #2a2c27;
+      --inc:       #93aee0;
+      --dec:       #dd8b78;
+      --focus:     #93aee0;
+    }
+  }
+
+  *, *::before, *::after { box-sizing: border-box; }
+  body, h1, h2, h3, p, figure { margin: 0; }
 
   body {
-    background: var(--bg);
-    color: var(--text);
-    font-family: 'DM Mono', monospace;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--sans);
     font-size: 14px;
-    min-height: 100vh;
-    line-height: 1.6;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
   }
 
-  body::after {
-    content: '';
-    position: fixed;
-    inset: 0;
-    background-image:
-      linear-gradient(var(--border) 1px, transparent 1px),
-      linear-gradient(90deg, var(--border) 1px, transparent 1px);
-    background-size: 48px 48px;
-    pointer-events: none;
-    z-index: 0;
-    opacity: 0.35;
+  button, input, textarea { font: inherit; color: inherit; }
+
+  :focus-visible {
+    outline: 2px solid var(--focus);
+    outline-offset: 2px;
+    border-radius: 1px;
   }
 
-  /* ── HEADER ── */
-  header {
-    border-bottom: 1px solid var(--border2);
-    padding: 22px 40px;
+  .num { font-variant-numeric: tabular-nums; font-family: var(--mono); }
+
+  /* ── masthead ─────────────────────────────────────────── */
+  .masthead {
     display: flex;
-    align-items: center;
+    align-items: flex-end;
     justify-content: space-between;
-    position: sticky;
-    top: 0;
-    background: rgba(7,16,10,0.95);
-    backdrop-filter: blur(12px);
-    z-index: 100;
+    gap: 32px;
+    padding: 26px 28px 20px;
+    border-bottom: 1px solid var(--ink);
   }
 
-  .logo {
-    display: flex;
-    align-items: baseline;
-    gap: 10px;
+  .wordmark {
+    font-size: 27px;
+    font-weight: 600;
+    letter-spacing: -0.035em;
+    line-height: 1;
   }
 
-  .logo-text {
-    font-family: 'Playfair Display', serif;
-    font-style: italic;
-    font-size: 22px;
-    color: var(--accent2);
-    letter-spacing: -0.3px;
-  }
-
-  .logo-tag {
-    font-size: 11px;
+  .tagline {
+    margin-top: 9px;
     color: var(--muted);
-    letter-spacing: 0.08em;
+    font-size: 13px;
+    max-width: 54ch;
   }
 
-  .header-links {
-    display: flex;
-    gap: 24px;
-    align-items: center;
+  .tagline .fml {
+    font-family: var(--mono);
+    font-size: 12.5px;
+    color: var(--ink);
   }
 
-  .header-links a {
+  .masthead a {
     color: var(--muted);
+    font-size: 13px;
     text-decoration: none;
-    font-size: 12px;
-    letter-spacing: 0.04em;
-    transition: color 0.2s;
-  }
-  .header-links a:hover { color: var(--text); }
-
-  /* ── HERO ── */
-  .hero {
-    position: relative;
-    z-index: 1;
-    padding: 72px 40px 56px;
-    max-width: 780px;
-    border-bottom: 1px solid var(--border);
-  }
-
-  .hero-eyebrow {
-    font-size: 11px;
-    letter-spacing: 0.2em;
-    color: var(--accent);
-    text-transform: uppercase;
-    margin-bottom: 18px;
-  }
-
-  .hero h1 {
-    font-family: 'Playfair Display', serif;
-    font-size: clamp(32px, 5vw, 52px);
-    font-weight: 700;
-    line-height: 1.15;
-    color: var(--text);
-    margin-bottom: 20px;
-  }
-
-  .hero h1 em {
-    font-style: italic;
-    color: var(--accent2);
-  }
-
-  .hero-sub {
-    color: var(--muted);
-    font-size: 13px;
-    max-width: 520px;
-    line-height: 1.75;
-  }
-
-  .hero-sub code {
-    background: var(--dim);
-    color: var(--accent2);
-    padding: 1px 6px;
-    border-radius: 3px;
-    font-size: 12px;
-  }
-
-  /* ── MAIN LAYOUT ── */
-  .app-wrapper {
-    position: relative;
-    z-index: 1;
-    display: grid;
-    grid-template-columns: 380px 1fr;
-    min-height: calc(100vh - 200px);
-  }
-
-  /* ── LEFT PANEL ── */
-  .panel-left {
-    border-right: 1px solid var(--border2);
-    padding: 32px 28px;
-    display: flex;
-    flex-direction: column;
-    gap: 28px;
-  }
-
-  .section-label {
-    font-size: 10px;
-    letter-spacing: 0.18em;
-    text-transform: uppercase;
-    color: var(--muted);
-    margin-bottom: 14px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-
-  .section-label::after {
-    content: '';
-    flex: 1;
-    height: 1px;
-    background: var(--border2);
-  }
-
-  /* Preset buttons */
-  .presets {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 8px;
-  }
-
-  .preset-btn {
-    background: var(--surface);
-    border: 1px solid var(--border2);
-    color: var(--muted);
-    padding: 10px 12px;
-    border-radius: 4px;
-    cursor: pointer;
-    font-family: 'DM Mono', monospace;
-    font-size: 12px;
-    text-align: left;
-    transition: border-color 0.15s, color 0.15s, background 0.15s;
-    line-height: 1.4;
-  }
-
-  .preset-btn:hover {
-    border-color: var(--muted);
-    color: var(--text);
-  }
-
-  .preset-btn.active {
-    border-color: var(--accent);
-    background: var(--surface);
-    color: var(--accent2);
-  }
-
-  .preset-btn .preset-name {
-    display: block;
-    font-weight: 500;
-    margin-bottom: 2px;
-    color: inherit;
-  }
-
-  .preset-btn .preset-fn {
-    display: block;
-    font-size: 11px;
-    opacity: 0.55;
-    font-style: italic;
-  }
-
-  /* Form fields */
-  .field {
-    display: flex;
-    flex-direction: column;
-    gap: 7px;
-  }
-
-  .field label {
-    font-size: 11px;
-    color: var(--muted);
-    letter-spacing: 0.06em;
-  }
-
-  .field input, .field textarea {
-    background: var(--surface);
-    border: 1px solid var(--border2);
-    color: var(--text);
-    padding: 10px 12px;
-    border-radius: 4px;
-    font-family: 'DM Mono', monospace;
-    font-size: 13px;
-    outline: none;
-    transition: border-color 0.15s;
-    width: 100%;
-  }
-
-  .field input:focus, .field textarea:focus {
-    border-color: var(--muted);
-  }
-
-  .field textarea {
-    resize: vertical;
-    min-height: 64px;
-  }
-
-  .field-hint {
-    font-size: 11px;
-    color: var(--muted);
-    opacity: 0.7;
-  }
-
-  .field-row {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 12px;
-  }
-
-  /* ── SYNTAX REFERENCE KEY ── */
-  .syntax-key {
-    background: var(--code-bg);
-    border: 1px solid var(--border2);
-    border-radius: 4px;
-    padding: 12px 14px;
-    margin-top: 4px;
-  }
-
-  .syntax-key-title {
-    font-size: 10px;
-    letter-spacing: 0.15em;
-    text-transform: uppercase;
-    color: var(--muted);
-    margin-bottom: 10px;
-  }
-
-  .syntax-table {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 4px 16px;
-  }
-
-  .syntax-row {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 11px;
-    line-height: 1.6;
-  }
-
-  .syntax-math {
-    color: var(--accent2);
-    min-width: 52px;
-    font-style: italic;
-  }
-
-  .syntax-arrow {
-    color: var(--dim);
-    flex-shrink: 0;
-  }
-
-  .syntax-code {
-    color: var(--muted);
-    font-size: 10.5px;
-  }
-
-  /* Formula preview */
-  .fn-preview {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 8px 12px;
-    background: var(--code-bg);
-    border: 1px solid var(--border2);
-    border-left: 2px solid var(--accent);
-    border-radius: 0 4px 4px 0;
-    font-size: 12px;
-    min-height: 34px;
-    transition: border-color 0.2s;
-  }
-
-  .fn-preview-label {
-    color: var(--muted);
-    font-size: 11px;
-    flex-shrink: 0;
-  }
-
-  .fn-preview-val {
-    color: var(--accent2);
-    font-style: italic;
-    font-family: 'Playfair Display', serif;
-    font-size: 13px;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    border-bottom: 1px solid var(--rule);
+    padding-bottom: 1px;
     white-space: nowrap;
   }
+  .masthead a:hover { color: var(--ink); border-bottom-color: currentColor; }
 
-  .fn-preview-val.error-preview {
-    color: var(--error);
-    font-family: 'DM Mono', monospace;
-    font-style: normal;
-    font-size: 11px;
+  /* ── frame ────────────────────────────────────────────── */
+  .frame {
+    display: grid;
+    grid-template-columns: var(--col) minmax(0, 1fr);
   }
 
-  /* Checkbox toggle */
-  .toggle-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 10px 12px;
-    background: var(--surface);
-    border: 1px solid var(--border2);
-    border-radius: 4px;
+  .controls {
+    border-right: 1px solid var(--rule);
+    padding: 20px 24px 28px;
+    align-self: start;
+    position: sticky;
+    top: 0;
+    max-height: 100vh;
+    overflow-y: auto;
   }
 
-  .toggle-label {
+  .group + .group { margin-top: 22px; }
+
+  .group > h2 {
     font-size: 12px;
-    color: var(--text);
-  }
-
-  .toggle-sub {
-    font-size: 11px;
+    font-weight: 600;
     color: var(--muted);
-    margin-top: 2px;
+    letter-spacing: 0.01em;
+    margin-bottom: 10px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--rule-soft);
   }
 
-  .toggle {
-    position: relative;
-    width: 36px;
-    height: 20px;
-    flex-shrink: 0;
-  }
+  /* presets */
+  .presets { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
 
-  .toggle input { opacity: 0; width: 0; height: 0; }
-
-  .toggle-slider {
-    position: absolute;
-    inset: 0;
-    background: var(--dim);
-    border-radius: 2px;
+  .preset {
+    text-align: left;
+    background: transparent;
+    border: 1px solid var(--rule);
+    border-radius: 3px;
+    padding: 7px 9px;
     cursor: pointer;
-    transition: background 0.2s;
-    border: 1px solid var(--border2);
+    line-height: 1.35;
+  }
+  .preset:hover { border-color: var(--faint); }
+  .preset b { display: block; font-weight: 500; font-size: 13px; }
+  .preset span {
+    display: block;
+    font-family: var(--mono);
+    font-size: 11.5px;
+    color: var(--muted);
+  }
+  .preset[aria-pressed="true"] {
+    background: var(--raised);
+    border-color: var(--ink);
+    box-shadow: inset 2px 0 0 var(--ink);
   }
 
-  .toggle-slider::before {
-    content: '';
-    position: absolute;
-    width: 12px;
-    height: 12px;
-    left: 3px;
-    top: 3px;
-    background: var(--muted);
-    border-radius: 1px;
-    transition: transform 0.15s, background 0.15s;
+  /* fields */
+  .field { display: block; }
+  .field + .field, .row + .field, .field + .row { margin-top: 12px; }
+  .row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+  .field > span {
+    display: block;
+    font-size: 12.5px;
+    color: var(--muted);
+    margin-bottom: 5px;
   }
 
-  .toggle input:checked + .toggle-slider {
-    background: var(--dim);
-    border-color: var(--accent);
-  }
-  .toggle input:checked + .toggle-slider::before {
-    transform: translateX(16px);
-    background: var(--accent);
-  }
-
-  /* ── GENERATE BUTTON ── */
-  .generate-btn {
-    background: var(--surface);
-    color: var(--accent2);
-    border: 1px solid var(--accent);
-    padding: 13px 24px;
-    border-radius: 4px;
-    font-family: 'DM Mono', monospace;
+  input[type="text"], input[type="number"], textarea {
+    width: 100%;
+    background: var(--raised);
+    border: 1px solid var(--rule);
+    border-radius: 3px;
+    padding: 7px 9px;
+    font-family: var(--mono);
     font-size: 13px;
-    font-weight: 500;
-    cursor: pointer;
-    letter-spacing: 0.08em;
-    transition: background 0.15s, color 0.15s;
-    text-align: center;
   }
+  input:hover, textarea:hover { border-color: var(--faint); }
+  textarea { resize: vertical; min-height: 58px; line-height: 1.5; }
 
-  .generate-btn:hover:not(:disabled) {
-    background: var(--accent);
-    color: #071008;
-  }
-
-  .generate-btn:disabled {
-    opacity: 0.35;
-    cursor: not-allowed;
-    border-color: var(--border2);
-    color: var(--muted);
-  }
-
-  /* ── RIGHT PANEL ── */
-  .panel-right {
-    display: flex;
-    flex-direction: column;
-  }
-
-  /* ── STATUS BAR — no bouncing dot, just a text ticker ── */
-  .status-bar {
-    border-bottom: 1px solid var(--border2);
-    padding: 0 28px;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    font-size: 12px;
-    color: var(--muted);
-    min-height: 44px;
-    overflow: hidden;
-  }
-
-  .status-indicator {
+  .echo {
+    margin-top: 8px;
+    padding: 8px 10px;
+    background: var(--sunk);
+    border-radius: 3px;
+    font-family: var(--mono);
+    font-size: 13px;
+    min-height: 35px;
     display: flex;
     align-items: center;
     gap: 8px;
-    flex-shrink: 0;
+    overflow-x: auto;
+    white-space: nowrap;
   }
+  .echo .k { color: var(--faint); }
+  .echo.bad { color: var(--dec); }
 
-  /* Thin horizontal bar loader — replaces the spinning circle */
-  .status-bar-loader {
-    width: 18px;
-    height: 2px;
-    background: var(--border2);
-    position: relative;
-    overflow: hidden;
-    border-radius: 1px;
-    flex-shrink: 0;
-  }
+  .hint { font-size: 12px; color: var(--faint); margin-top: 6px; }
 
-  .status-bar-loader::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: var(--muted);
-    transform: translateX(-100%);
-    transition: transform 0.3s;
-  }
-
-  .status-bar-loader.loading::after {
-    background: var(--warm);
-    animation: bar-sweep 1.2s ease-in-out infinite;
-  }
-
-  .status-bar-loader.ready::after {
-    background: var(--green);
-    transform: translateX(0);
-  }
-
-  .status-bar-loader.error::after {
-    background: var(--error);
-    transform: translateX(0);
-  }
-
-  @keyframes bar-sweep {
-    0%   { transform: translateX(-100%); }
-    50%  { transform: translateX(0%); }
-    100% { transform: translateX(100%); }
-  }
-
-  .status-text {
-    color: var(--muted);
-    font-size: 11px;
-    letter-spacing: 0.04em;
-  }
-
-  .output-tabs {
-    border-bottom: 1px solid var(--border2);
-    display: flex;
-    padding: 0 28px;
-  }
-
-  .tab-btn {
-    background: none;
-    border: none;
-    border-bottom: 1px solid transparent;
-    color: var(--muted);
-    padding: 12px 16px 11px;
-    font-family: 'DM Mono', monospace;
-    font-size: 12px;
+  details.notation { margin-top: 10px; }
+  details.notation summary {
     cursor: pointer;
-    letter-spacing: 0.04em;
-    transition: color 0.15s, border-color 0.15s;
-    margin-bottom: -1px;
-  }
-
-  .tab-btn:hover { color: var(--text); }
-  .tab-btn.active {
-    color: var(--accent2);
-    border-bottom-color: var(--accent);
-  }
-
-  .output-content {
-    flex: 1;
-    padding: 28px;
-    overflow: auto;
-  }
-
-  .tab-panel { display: none; }
-  .tab-panel.active { display: block; }
-
-  .pattern-output {
-    background: var(--code-bg);
-    border: 1px solid var(--border2);
-    border-radius: 4px;
-    padding: 24px;
-    font-size: 13px;
-    line-height: 2;
-    white-space: pre-wrap;
-    color: var(--text);
-    min-height: 300px;
-    position: relative;
-  }
-
-  .pattern-output .inc-word { color: var(--green); }
-  .pattern-output .dec-word { color: var(--error); }
-  .pattern-output .sc-word { color: #93c5fd; }
-  .pattern-output .header-line {
-    color: var(--accent2);
-    font-family: 'Playfair Display', serif;
-    font-size: 15px;
-    font-style: italic;
-  }
-  .pattern-output .divider-line { color: var(--border2); }
-  .pattern-output .chain-line {
-    color: var(--warm);
-  }
-  .pattern-output .placeholder {
+    font-size: 12.5px;
     color: var(--muted);
-    font-style: italic;
-    opacity: 0.5;
-  }
-
-  /* ── COMPUTING STATE — text flicker, no spinner ── */
-  .computing-notice {
-    display: none;
-    position: absolute;
-    bottom: 20px;
-    right: 20px;
-    font-size: 11px;
-    color: var(--muted);
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    animation: text-blink 1.4s step-end infinite;
-  }
-
-  .computing-notice.visible { display: block; }
-
-  @keyframes text-blink {
-    0%, 100% { opacity: 1; }
-    50%       { opacity: 0; }
-  }
-
-  .copy-btn {
-    background: none;
-    border: 1px solid var(--border2);
-    color: var(--muted);
-    padding: 5px 12px;
-    border-radius: 4px;
-    font-family: 'DM Mono', monospace;
-    font-size: 11px;
-    cursor: pointer;
-    transition: color 0.15s, border-color 0.15s;
-  }
-  .copy-btn:hover { color: var(--text); border-color: var(--muted); }
-
-  .chart-wrap {
-    background: var(--code-bg);
-    border: 1px solid var(--border2);
-    border-radius: 4px;
-    padding: 24px;
-    height: 320px;
-    position: relative;
-  }
-
-  .stats-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-    gap: 14px;
-    margin-bottom: 24px;
-  }
-
-  .stat-card {
-    background: var(--surface);
-    border: 1px solid var(--border2);
-    border-radius: 4px;
-    padding: 16px 18px;
-  }
-
-  .stat-label {
-    font-size: 10px;
-    letter-spacing: 0.15em;
-    text-transform: uppercase;
-    color: var(--muted);
-    margin-bottom: 8px;
-  }
-
-  .stat-value {
-    font-size: 22px;
-    color: var(--accent2);
-    font-family: 'Playfair Display', serif;
-  }
-
-  .stat-sub {
-    font-size: 11px;
-    color: var(--muted);
-    margin-top: 4px;
-  }
-
-  .stitch-counts-display {
-    background: var(--code-bg);
-    border: 1px solid var(--border2);
-    border-radius: 4px;
-    padding: 18px 20px;
-    font-size: 12px;
-    color: var(--muted);
-    line-height: 1.9;
-  }
-
-  .stitch-counts-display .counts-label {
-    color: var(--muted);
-    margin-bottom: 10px;
-    font-size: 11px;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-  }
-
-  .counts-row {
+    list-style: none;
     display: flex;
-    flex-wrap: wrap;
+    align-items: center;
     gap: 6px;
   }
+  details.notation summary::-webkit-details-marker { display: none; }
+  details.notation summary::before {
+    content: '+';
+    font-family: var(--mono);
+    color: var(--faint);
+  }
+  details.notation[open] summary::before { content: '–'; }
+  details.notation summary:hover { color: var(--ink); }
 
-  .count-chip {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    padding: 2px 8px;
-    font-size: 11px;
-    border: 1px solid var(--border2);
+  .notation dl {
+    margin: 10px 0 0;
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 4px 12px;
+    font-size: 12.5px;
+  }
+  .notation dt { font-family: var(--mono); }
+  .notation dd { margin: 0; color: var(--muted); }
+
+  /* checkbox */
+  .check {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 9px;
+    align-items: start;
+    margin-top: 12px;
+    cursor: pointer;
+  }
+  .check input {
+    appearance: none;
+    width: 15px; height: 15px;
+    margin: 3px 0 0;
+    border: 1px solid var(--faint);
     border-radius: 2px;
+    background: var(--raised);
+    display: grid;
+    place-content: center;
+    cursor: pointer;
   }
-
-  .count-chip .chip-n { color: var(--muted); font-size: 10px; }
-  .count-chip .chip-v { color: var(--text); }
-
-  /* ── INIT NOTICE — no floating banner, just a line in the status bar ── */
-  /* (handled via status bar now) */
-
-  .error-box {
-    background: transparent;
-    border: 1px solid rgba(248,113,113,0.25);
-    border-left: 2px solid var(--error);
-    border-radius: 0 4px 4px 0;
-    padding: 16px;
-    color: var(--error);
-    font-size: 12px;
-    line-height: 1.75;
-    white-space: pre-wrap;
+  .check input::after {
+    content: '';
+    width: 7px; height: 7px;
+    background: var(--ink);
+    transform: scale(0);
   }
+  .check input:checked { border-color: var(--ink); }
+  .check input:checked::after { transform: scale(1); }
+  .check b { font-weight: 400; font-size: 13px; display: block; }
+  .check em { font-style: normal; font-size: 12px; color: var(--faint); }
 
-  .math-note {
-    background: var(--code-bg);
-    border: 1px solid var(--border2);
-    border-radius: 4px;
-    padding: 16px 18px;
-    font-size: 12px;
+  /* run */
+  .run {
+    width: 100%;
+    margin-top: 22px;
+    padding: 11px;
+    background: var(--ink);
+    color: var(--paper);
+    border: 1px solid var(--ink);
+    border-radius: 3px;
+    font-weight: 500;
+    cursor: pointer;
+  }
+  .run:hover:not(:disabled) { opacity: 0.86; }
+  .run:disabled { background: transparent; color: var(--faint); border-color: var(--rule); cursor: default; }
+
+  /* ── output ───────────────────────────────────────────── */
+  .output { min-width: 0; }
+
+  .statusbar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 0 28px;
+    height: 38px;
+    border-bottom: 1px solid var(--rule);
+    font-size: 12.5px;
     color: var(--muted);
-    line-height: 1.75;
+    position: relative;
+    overflow: hidden;
+  }
+  .statusbar .mark {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: var(--faint);
+    flex: none;
+  }
+  .statusbar[data-state="ready"] .mark { background: var(--inc); }
+  .statusbar[data-state="error"] .mark { background: var(--dec); }
+  .statusbar[data-state="busy"] .mark { background: var(--faint); }
+
+  .statusbar::after {
+    content: '';
+    position: absolute;
+    left: 0; bottom: 0;
+    height: 1px; width: 30%;
+    background: var(--ink);
+    transform: translateX(-100%);
+    opacity: 0;
+  }
+  .statusbar[data-state="busy"]::after {
+    opacity: 1;
+    animation: sweep 1.1s linear infinite;
+  }
+  @keyframes sweep {
+    to { transform: translateX(333%); }
   }
 
-  .math-note strong { color: var(--text); font-weight: 500; }
+  .plates {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    border-bottom: 1px solid var(--rule);
+  }
+  .plate { padding: 20px 24px 16px; min-width: 0; }
+  .plate + .plate { border-left: 1px solid var(--rule); }
+
+  .plate figcaption {
+    font-size: 12.5px;
+    color: var(--muted);
+    margin-top: 12px;
+    max-width: 44ch;
+  }
+  .plate svg { display: block; width: 100%; height: auto; }
+
+  .ring-line  { fill: none; stroke: var(--rule); stroke-width: 1; }
+  .ring-dot   { fill: var(--faint); }
+  .ring-inc   { fill: var(--inc); }
+  .ring-dec   { fill: var(--dec); }
+  .prof-curve { fill: none; stroke: var(--ink); stroke-width: 1.5; stroke-linejoin: round; }
+  .prof-chord { stroke: var(--rule); stroke-width: 1; }
+  .prof-axis  { stroke: var(--rule); stroke-width: 1; stroke-dasharray: 2 3; }
+  .prof-node  { fill: var(--paper); stroke: var(--ink); stroke-width: 1.2; }
+  .plate-empty { fill: var(--faint); font-family: var(--mono); font-size: 12px; }
+
+  /* legend + measures */
+  .measures {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0 28px;
+    padding: 14px 28px;
+    border-bottom: 1px solid var(--rule);
+  }
+  .measures div { display: flex; align-items: baseline; gap: 7px; }
+  .measures dt, .measures .lbl { font-size: 12.5px; color: var(--muted); }
+  .measures dd, .measures .val {
+    margin: 0;
+    font-family: var(--mono);
+    font-variant-numeric: tabular-nums;
+    font-size: 15px;
+  }
+  .swatch { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+
+  .counts {
+    padding: 14px 28px;
+    border-bottom: 1px solid var(--rule);
+    font-family: var(--mono);
+    font-variant-numeric: tabular-nums;
+    font-size: 12.5px;
+    color: var(--ink);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 3px 14px;
+  }
+  .counts .lead { color: var(--muted); font-family: var(--sans); }
+  .counts i { font-style: normal; color: var(--faint); }
+
+  .pattern-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 16px 28px 10px;
+  }
+  .pattern-head h2 { font-size: 13px; font-weight: 600; }
+
+  .copy {
+    background: transparent;
+    border: 1px solid var(--rule);
+    border-radius: 3px;
+    padding: 4px 10px;
+    font-size: 12.5px;
+    color: var(--muted);
+    cursor: pointer;
+  }
+  .copy:hover:not(:disabled) { color: var(--ink); border-color: var(--faint); }
+  .copy:disabled { opacity: 0.45; cursor: default; }
+
+  .pattern {
+    margin: 0 28px 32px;
+    padding: 18px 20px;
+    background: var(--raised);
+    border: 1px solid var(--rule);
+    border-radius: 3px;
+    font-family: var(--mono);
+    font-size: 13px;
+    line-height: 1.95;
+    white-space: pre-wrap;
+    overflow-x: auto;
+  }
+  .pattern .ttl { font-weight: 500; }
+  .pattern .edge { color: var(--muted); }
+  .pattern .inc { color: var(--inc); font-weight: 500; }
+  .pattern .dec { color: var(--dec); font-weight: 500; }
+  .pattern .loopno { color: var(--faint); }
+  .pattern .empty, .pattern .fail {
+    font-family: var(--sans);
+    white-space: pre-wrap;
+    line-height: 1.6;
+  }
+  .pattern .empty { color: var(--muted); }
+  .pattern .fail { color: var(--dec); }
+
+  .notes {
+    margin: 0 28px 36px;
+    max-width: 68ch;
+    font-size: 13px;
+    color: var(--muted);
+  }
+  .notes h2 { font-size: 13px; font-weight: 600; color: var(--ink); margin-bottom: 6px; }
+  .notes p + p { margin-top: 9px; }
+  .notes code { font-family: var(--mono); font-size: 12.5px; color: var(--ink); }
 
   footer {
-    border-top: 1px solid var(--border);
-    padding: 24px 40px;
-    position: relative;
-    z-index: 1;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    color: var(--muted);
-    font-size: 11px;
-    letter-spacing: 0.04em;
+    border-top: 1px solid var(--rule);
+    padding: 16px 28px;
+    font-size: 12.5px;
+    color: var(--faint);
+  }
+  footer a { color: inherit; }
+
+  @media (max-width: 900px) {
+    .frame { grid-template-columns: 1fr; }
+    .controls { position: static; max-height: none; border-right: none; border-bottom: 1px solid var(--rule); }
+    .plates { grid-template-columns: 1fr; }
+    .plate + .plate { border-left: none; border-top: 1px solid var(--rule); }
+  }
+  @media (max-width: 560px) {
+    .masthead { flex-direction: column; align-items: flex-start; gap: 14px; padding: 20px 18px 16px; }
+    .controls { padding: 18px; }
+    .statusbar, .measures, .counts, .pattern-head { padding-left: 18px; padding-right: 18px; }
+    .pattern, .notes { margin-left: 18px; margin-right: 18px; }
+    .plate { padding: 18px; }
   }
 
-  footer a { color: var(--muted); text-decoration: none; }
-  footer a:hover { color: var(--text); }
-
-  @media (max-width: 768px) {
-    header { padding: 16px 20px; }
-    .hero { padding: 40px 20px 36px; }
-    .app-wrapper { grid-template-columns: 1fr; }
-    .panel-left { border-right: none; border-bottom: 1px solid var(--border2); }
-    footer { flex-direction: column; gap: 8px; text-align: center; }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation: none !important; transition: none !important; }
   }
 </style>
 </head>
 <body>
 
-<header>
-  <div class="logo">
-    <span class="logo-text">surface-to-stitch</span>
-    <span class="logo-tag">// pattern generator</span>
+<header class="masthead">
+  <div>
+    <h1 class="wordmark">surface-to-stitch</h1>
+    <p class="tagline">
+      Crochet patterns for surfaces of revolution. Give it a profile
+      <span class="fml">z = f(r)</span>; it walks the curve at equal arc length, converts each
+      radius into a whole number of stitches, and spaces the increases and decreases so they
+      never stack up in a seam.
+    </p>
   </div>
-  <nav class="header-links">
-    <a href="https://github.com/hannes31415" target="_blank">github</a>
-  </nav>
+  <a href="https://github.com/hannes31415">Source on GitHub</a>
 </header>
 
-<section class="hero">
-  <p class="hero-eyebrow">Open Source</p>
-  <h1>Crochet patterns from<br><em>any surface z = f(r)</em></h1>
-  <p class="hero-sub">
-    Enter any rotationally symmetric surface function. The tool computes loop positions via
-    arc-length parameterization, converts radii to integer stitch counts, and places
-    increases/decreases using <code>π / lcm(j, k)</code> offsets.
-  </p>
-</section>
+<div class="frame">
 
-<div class="app-wrapper">
+  <!-- ─────────── controls ─────────── -->
+  <form class="controls" id="controls" onsubmit="event.preventDefault(); generate();">
 
-  <aside class="panel-left">
-
-    <!-- Presets -->
-    <div>
-      <div class="section-label">presets</div>
-      <div class="presets">
-        <button class="preset-btn active" data-fn="1 - (1 - r**2)**0.5" data-domain="1.0" data-name="Sphere" onclick="selectPreset(this)">
-          <span class="preset-name">Sphere</span>
-          <span class="preset-fn">z = 1 − √(1−r²)</span>
+    <section class="group">
+      <h2>Start from a surface</h2>
+      <div class="presets" id="presets">
+        <button type="button" class="preset" aria-pressed="false"
+                data-fn="1 - sqrt(1 - r^2)" data-domain="1.0" data-name="Sphere">
+          <b>Sphere</b><span>1 − √(1−r²)</span>
         </button>
-        <button class="preset-btn" data-fn="r**2" data-domain="1.0" data-name="Paraboloid" onclick="selectPreset(this)">
-          <span class="preset-name">Paraboloid</span>
-          <span class="preset-fn">z = r²</span>
+        <button type="button" class="preset" aria-pressed="false"
+                data-fn="r^2" data-domain="1.0" data-name="Paraboloid">
+          <b>Paraboloid</b><span>r²</span>
         </button>
-        <button class="preset-btn" data-fn="np.cos(r)" data-domain="9.0" data-name="Cosine" onclick="selectPreset(this)">
-          <span class="preset-name">Cosine</span>
-          <span class="preset-fn">z = cos(r)</span>
+        <button type="button" class="preset" aria-pressed="false"
+                data-fn="cos(r)" data-domain="9.0" data-name="Ripple">
+          <b>Ripple</b><span>cos(r)</span>
         </button>
-        <button class="preset-btn" data-fn="r" data-domain="1.0" data-name="Cone" onclick="selectPreset(this)">
-          <span class="preset-name">Cone</span>
-          <span class="preset-fn">z = r</span>
+        <button type="button" class="preset" aria-pressed="false"
+                data-fn="r" data-domain="1.0" data-name="Cone">
+          <b>Cone</b><span>r</span>
         </button>
       </div>
-    </div>
+    </section>
 
-    <!-- Surface function -->
-    <div>
-      <div class="section-label">surface function</div>
-      <div class="field">
-        <label>z = f(r) &nbsp;·&nbsp; type in natural math notation</label>
-        <textarea id="fn-input" rows="2" placeholder="e.g. 1 - sqrt(1 - r^2)"></textarea>
+    <section class="group">
+      <h2>Profile</h2>
+      <label class="field" for="fn-input">
+        <span>Height as a function of radius, z = f(r)</span>
+        <textarea id="fn-input" rows="2" spellcheck="false" placeholder="1 - sqrt(1 - r^2)"></textarea>
+      </label>
+      <div class="echo" id="echo"><span class="k">z =</span><span id="echo-val">—</span></div>
 
-        <div class="fn-preview" id="fn-preview">
-          <span class="fn-preview-label">z =</span>
-          <span class="fn-preview-val" id="fn-preview-val">—</span>
-        </div>
+      <details class="notation">
+        <summary>Notation</summary>
+        <dl>
+          <dt>a^b</dt><dd>a to the power b</dd>
+          <dt>sqrt(x)</dt><dd>square root</dd>
+          <dt>e^x, exp(x)</dt><dd>exponential</dd>
+          <dt>ln(x), log(x)</dt><dd>natural log, log base 10</dd>
+          <dt>sin, cos, tan</dt><dd>radians</dd>
+          <dt>abs(x)</dt><dd>absolute value</dd>
+          <dt>pi</dt><dd>3.14159…</dd>
+        </dl>
+      </details>
+    </section>
 
-        <div class="syntax-key">
-          <div class="syntax-key-title">notation guide</div>
-          <div class="syntax-table">
-            <div class="syntax-row">
-              <span class="syntax-math">a^b</span>
-              <span class="syntax-arrow">→</span>
-              <span class="syntax-code">power (aᵇ)</span>
-            </div>
-            <div class="syntax-row">
-              <span class="syntax-math">sqrt(x)</span>
-              <span class="syntax-arrow">→</span>
-              <span class="syntax-code">√x</span>
-            </div>
-            <div class="syntax-row">
-              <span class="syntax-math">e^x</span>
-              <span class="syntax-arrow">→</span>
-              <span class="syntax-code">eˣ</span>
-            </div>
-            <div class="syntax-row">
-              <span class="syntax-math">sin(x)</span>
-              <span class="syntax-arrow">→</span>
-              <span class="syntax-code">sine</span>
-            </div>
-            <div class="syntax-row">
-              <span class="syntax-math">cos(x)</span>
-              <span class="syntax-arrow">→</span>
-              <span class="syntax-code">cosine</span>
-            </div>
-            <div class="syntax-row">
-              <span class="syntax-math">ln(x)</span>
-              <span class="syntax-arrow">→</span>
-              <span class="syntax-code">natural log</span>
-            </div>
-            <div class="syntax-row">
-              <span class="syntax-math">abs(x)</span>
-              <span class="syntax-arrow">→</span>
-              <span class="syntax-code">|x|</span>
-            </div>
-            <div class="syntax-row">
-              <span class="syntax-math">pi</span>
-              <span class="syntax-arrow">→</span>
-              <span class="syntax-code">π ≈ 3.14159</span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Parameters -->
-    <div>
-      <div class="section-label">parameters</div>
-      <div class="field-row">
-        <div class="field">
-          <label>domain limit</label>
-          <input type="number" id="domain" value="1.0" step="0.1" min="0.01">
-        </div>
-        <div class="field">
-          <label>loops (N)</label>
-          <input type="number" id="n-loops" value="10" min="2" max="40">
-        </div>
-      </div>
-      <div class="toggle-row" style="margin-top:12px">
-        <div>
-          <div class="toggle-label">Closed shape</div>
-          <div class="toggle-sub">Mirror to close (e.g. full sphere)</div>
-        </div>
-        <label class="toggle">
-          <input type="checkbox" id="closed-toggle">
-          <span class="toggle-slider"></span>
+    <section class="group">
+      <h2>Shape</h2>
+      <div class="row">
+        <label class="field" for="domain">
+          <span>Radius limit</span>
+          <input type="number" id="domain" value="1.0" step="any" min="0.01">
+        </label>
+        <label class="field" for="n-loops">
+          <span>Loops</span>
+          <input type="number" id="n-loops" value="10" min="2" max="40" step="1">
         </label>
       </div>
-    </div>
+      <label class="check" for="closed-toggle">
+        <input type="checkbox" id="closed-toggle">
+        <span>
+          <b>Mirror to close the shape</b>
+          <em>Repeats the loops in reverse, turning a bowl into a ball</em>
+        </span>
+      </label>
+    </section>
 
-    <!-- Yarn -->
-    <div>
-      <div class="section-label">yarn profile</div>
-      <div class="field-row">
-        <div class="field">
-          <label>stitch height (cm)</label>
+    <section class="group">
+      <h2>Your gauge</h2>
+      <div class="row">
+        <label class="field" for="stitch-h">
+          <span>Stitch height (cm)</span>
           <input type="number" id="stitch-h" value="0.572" step="0.001" min="0.1">
-        </div>
-        <div class="field">
-          <label>stitch length (cm)</label>
+        </label>
+        <label class="field" for="stitch-l">
+          <span>Stitch length (cm)</span>
           <input type="number" id="stitch-l" value="0.636" step="0.001" min="0.1">
-        </div>
+        </label>
       </div>
-      <p class="field-hint" style="margin-top:6px">Default: 5.0mm hook, medium-weight yarn</p>
+      <p class="hint">Measured from a 5.0 mm hook and medium-weight yarn. Swatch first if yours differs.</p>
+    </section>
+
+    <section class="group">
+      <h2>Label</h2>
+      <label class="field" for="pattern-name">
+        <span>Pattern name, if you want one on the printout</span>
+        <input type="text" id="pattern-name" placeholder="Sphere">
+      </label>
+    </section>
+
+    <button class="run" id="run-btn" type="submit" disabled>Generate pattern</button>
+  </form>
+
+  <!-- ─────────── output ─────────── -->
+  <main class="output">
+
+    <div class="statusbar" id="statusbar" data-state="busy" role="status" aria-live="polite">
+      <span class="mark"></span>
+      <span id="status-text">Loading the Python runtime…</span>
     </div>
 
-    <!-- Pattern name -->
-    <div class="field">
-      <label>pattern name (optional)</label>
-      <input type="text" id="pattern-name" placeholder="My Pattern">
+    <div class="plates">
+      <figure class="plate">
+        <svg id="rings" viewBox="0 0 320 320" role="img" aria-label="Stitch chart">
+          <text class="plate-empty" x="160" y="160" text-anchor="middle">no chart yet</text>
+        </svg>
+        <figcaption id="rings-cap">
+          Each ring is one loop, each dot one stitch, read from the centre out.
+        </figcaption>
+      </figure>
+      <figure class="plate">
+        <svg id="profile" viewBox="0 0 320 320" role="img" aria-label="Surface cross-section">
+          <text class="plate-empty" x="160" y="160" text-anchor="middle">no cross-section yet</text>
+        </svg>
+        <figcaption>
+          The curve, mirrored: a slice through the finished piece. Every chord is one loop,
+          equally spaced along the curve rather than up the axis.
+        </figcaption>
+      </figure>
     </div>
 
-    <button class="generate-btn" id="gen-btn" onclick="generate()" disabled>
-      generate pattern
-    </button>
+    <dl class="measures" id="measures">
+      <div><dt>Loops</dt><dd id="m-loops">—</dd></div>
+      <div><dt>Stitches</dt><dd id="m-total">—</dd></div>
+      <div><dt>Widest loop</dt><dd id="m-max">—</dd></div>
+      <div><dt>Finished width</dt><dd id="m-diam">—</dd></div>
+      <div><span class="swatch" style="background:var(--inc)"></span><span class="lbl">increase</span></div>
+      <div><span class="swatch" style="background:var(--dec)"></span><span class="lbl">decrease</span></div>
+    </dl>
 
-  </aside>
+    <div class="counts" id="counts"><span class="lead">Stitches per loop appear here once you generate.</span></div>
 
-  <main class="panel-right">
-    <div class="status-bar">
-      <div class="status-indicator">
-        <div class="status-bar-loader" id="status-loader"></div>
-        <span class="status-text" id="status-text">loading python runtime…</span>
-      </div>
+    <div class="pattern-head">
+      <h2>Written pattern</h2>
+      <button class="copy" id="copy-btn" type="button" disabled>Copy</button>
     </div>
 
-    <div class="output-tabs">
-      <button class="tab-btn active" onclick="showTab('pattern', this)">pattern</button>
-      <button class="tab-btn" onclick="showTab('chart', this)">stitch chart</button>
-      <button class="tab-btn" onclick="showTab('stats', this)">stats</button>
-    </div>
+    <div class="pattern" id="pattern"><span class="empty">Pick a surface on the left, or type your own profile, then generate.</span></div>
 
-    <div class="output-content">
-
-      <div id="tab-pattern" class="tab-panel active">
-        <div class="pattern-output" id="pattern-out" style="position:relative">
-          <span class="placeholder">Your pattern will appear here…
-
-Select a preset or enter a surface function,
-then click generate pattern.</span>
-          <div class="computing-notice" id="computing-notice">computing…</div>
-        </div>
-        <div style="margin-top:12px;display:flex;justify-content:flex-end">
-          <button class="copy-btn" id="copy-btn" onclick="copyPattern()">copy pattern</button>
-        </div>
-      </div>
-
-      <div id="tab-chart" class="tab-panel">
-        <div class="chart-wrap">
-          <canvas id="stitch-chart"></canvas>
-        </div>
-        <div style="margin-top:14px">
-          <div class="math-note">
-            <strong>Arc-length parameterization</strong> ensures each loop sits an equal distance along the
-            surface profile — not an equal Euclidean distance. Loop n sits at radius R<sub>n</sub> such that
-            the arc from 0 to R<sub>n</sub> is exactly n/N of the total arc length.
-            <br><br>
-            <strong>Stitch placement</strong> uses the number-theoretic offset φ = π / lcm(j, k),
-            where j and k are the special-stitch counts in consecutive loops. This maximises angular
-            separation and preserves rotational symmetry.
-          </div>
-        </div>
-      </div>
-
-      <div id="tab-stats" class="tab-panel">
-        <div class="stats-grid" id="stats-grid">
-          <div class="stat-card">
-            <div class="stat-label">total loops</div>
-            <div class="stat-value" id="stat-loops">—</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-label">total stitches</div>
-            <div class="stat-value" id="stat-total">—</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-label">max stitches</div>
-            <div class="stat-value" id="stat-max">—</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-label">est. diameter</div>
-            <div class="stat-value" id="stat-diam">—</div>
-          </div>
-        </div>
-        <div class="stitch-counts-display">
-          <div class="counts-label">stitch counts per loop</div>
-          <div class="counts-row" id="counts-row">
-            <span style="color:var(--muted);font-style:italic">generate a pattern to see counts</span>
-          </div>
-        </div>
-      </div>
-
-    </div>
+    <section class="notes">
+      <h2>How the placement works</h2>
+      <p>Loops sit at equal arc length along the profile, not at equal height, so the fabric
+      keeps an even row gauge as the surface steepens. Loop <code>n</code> lands at the radius
+      where the arc from the centre is exactly <code>n/N</code> of the total.</p>
+      <p>Where consecutive loops need <code>j</code> and <code>k</code> shaping stitches, the
+      second ring is rotated by <code>π / lcm(j, k)</code>. That is the offset that keeps
+      increases from landing on top of each other loop after loop, which is what produces
+      visible ridges instead of a smooth curve.</p>
+    </section>
   </main>
 </div>
 
-<footer>
-  <span>surface-to-stitch · <a href="https://github.com/hannes31415" target="_blank">source</a></span>
-  <span>2025</span>
-</footer>
+<footer>MIT licensed. Patterns are yours to sell, gift, or frog.</footer>
 
 <script src="https://cdn.jsdelivr.net/pyodide/v0.25.0/full/pyodide.js"></script>
-
 <script>
-// ── State ───────────────────────────────────────────────────────────────────
+// ── state ────────────────────────────────────────────────────────────────────
 let pyodide = null;
-let chartInstance = null;
-let lastCounts = [];
 let lastPattern = '';
 
-// ── Natural math → Python translator ────────────────────────────────────────
+const $ = id => document.getElementById(id);
+
+// ── notation → python ────────────────────────────────────────────────────────
 function translateToNp(expr) {
-  let s = expr.trim();
+  let s = (expr || '').trim();
   if (!s) return '';
   s = s.replace(/\be\s*\^\s*\(([^)]+)\)/g, 'np.exp($1)');
   s = s.replace(/\be\s*\^\s*\{([^}]+)\}/g, 'np.exp($1)');
@@ -1019,67 +653,38 @@ function translateToNp(expr) {
   s = s.replace(/\bln\s*\(/g, 'np.log(');
   s = s.replace(/\blog\s*\(/g, 'np.log10(');
   s = s.replace(/\babs\s*\(/g, 'np.abs(');
-  s = s.replace(/\bpi\b/g, 'np.pi');
   s = s.replace(/\bexp\s*\(/g, 'np.exp(');
+  s = s.replace(/\bpi\b/g, 'np.pi');
   return s;
 }
 
-function prettyPrint(raw) {
+function prettify(raw) {
   return raw
-    .replace(/np\.sqrt\(/g, '√(')
-    .replace(/np\.exp\(/g, 'exp(')
-    .replace(/np\.sin\(/g, 'sin(')
-    .replace(/np\.cos\(/g, 'cos(')
-    .replace(/np\.tan\(/g, 'tan(')
-    .replace(/np\.log\(/g, 'ln(')
-    .replace(/np\.log10\(/g, 'log(')
-    .replace(/np\.abs\(/g, '|')
-    .replace(/np\.pi/g, 'π')
-    .replace(/\*\*/g, '^')
-    .replace(/\*/g, '·');
+    .replace(/sqrt\(/g, '√(')
+    .replace(/\bpi\b/g, 'π')
+    .replace(/\*/g, '·')
+    .replace(/\^2\b/g, '²')
+    .replace(/\^3\b/g, '³');
 }
 
-function updatePreview() {
-  const raw = document.getElementById('fn-input').value;
-  const previewEl = document.getElementById('fn-preview-val');
-  if (!raw.trim()) {
-    previewEl.textContent = '—';
-    previewEl.className = 'fn-preview-val';
-    return;
-  }
-  try {
-    const translated = translateToNp(raw);
-    previewEl.textContent = prettyPrint(raw);
-    previewEl.className = 'fn-preview-val';
-  } catch(e) {
-    previewEl.textContent = 'invalid expression';
-    previewEl.className = 'fn-preview-val error-preview';
-  }
+function updateEcho() {
+  const raw = $('fn-input').value;
+  const box = $('echo'), val = $('echo-val');
+  box.classList.remove('bad');
+  val.textContent = raw.trim() ? prettify(raw.trim()) : '—';
 }
 
-// ── Pyodide init ─────────────────────────────────────────────────────────────
-async function initPyodide() {
-  setStatus('loading', 'loading python runtime…');
-  try {
-    pyodide = await loadPyodide({
-      indexURL: 'https://cdn.jsdelivr.net/pyodide/v0.25.0/full/'
-    });
-    setStatus('loading', 'installing numpy, scipy…');
-    await pyodide.loadPackage(['numpy', 'scipy']);
-    await pyodide.runPythonAsync(PYTHON_CODE);
-    setStatus('ready', 'ready');
-    document.getElementById('gen-btn').disabled = false;
-    selectPreset(document.querySelector('.preset-btn.active'));
-  } catch (e) {
-    setStatus('error', 'failed to load python: ' + e.message);
-  }
+// ── status ───────────────────────────────────────────────────────────────────
+function setStatus(state, text) {
+  $('statusbar').dataset.state = state;
+  $('status-text').textContent = text;
 }
 
-// ── Python code ───────────────────────────────────────────────────────────────
+// ── python ───────────────────────────────────────────────────────────────────
 const PYTHON_CODE = `
 import numpy as np
 from scipy.integrate import quad
-import math
+import math, json
 
 def arc_length_integrand(r, f, dr=1e-6):
     dz_dr = (f(r + dr) - f(r - dr)) / (2 * dr)
@@ -1096,7 +701,7 @@ def cumulative_arc_length(r, f, tol=1e-8):
 def find_loop_radius(target_arc, f, domain, tol=1e-6, max_iter=100):
     a, b = 0.0, domain
     if cumulative_arc_length(b, f) < target_arc:
-        raise ValueError(f"target_arc exceeds total arc length")
+        raise ValueError("target arc exceeds the total arc length")
     for _ in range(max_iter):
         if (b - a) / 2 < tol:
             break
@@ -1109,29 +714,19 @@ def find_loop_radius(target_arc, f, domain, tol=1e-6, max_iter=100):
 
 def compute_loop_radii(f, n_loops, domain):
     arc = total_arc_length(f, domain)
-    radii = []
-    for n in range(1, n_loops + 1):
-        target = (n / n_loops) * arc
-        r_n = find_loop_radius(target, f, domain)
-        radii.append(r_n)
-    return radii
+    return [find_loop_radius((n / n_loops) * arc, f, domain) for n in range(1, n_loops + 1)]
 
-def scaling_factor(stitch_height_cm, stitch_length_cm, total_arc, n_loops):
+def scaling_factor(stitch_height_cm, total_arc, n_loops):
     return (stitch_height_cm * n_loops) / total_arc
 
 def radii_to_stitch_counts(radii, f, domain, stitch_height_cm, stitch_length_cm, n_loops):
     arc = total_arc_length(f, domain)
-    c = scaling_factor(stitch_height_cm, stitch_length_cm, arc, n_loops)
-    counts = []
-    for r in radii:
-        circumference = 2 * math.pi * r * c
-        counts.append(int(math.floor(circumference / stitch_length_cm)))
-    return counts
+    c = scaling_factor(stitch_height_cm, arc, n_loops)
+    return [int(math.floor((2 * math.pi * r * c) / stitch_length_cm)) for r in radii]
 
 def special_stitch_counts(stitch_counts):
     n = len(stitch_counts)
-    jk = [(0, 0)]
-    jk.append((0, stitch_counts[0]))
+    jk = [(0, 0), (0, stitch_counts[0])]
     for i in range(n - 2):
         j = abs(stitch_counts[i] - stitch_counts[i + 1])
         k = abs(stitch_counts[i + 1] - stitch_counts[i + 2])
@@ -1148,17 +743,11 @@ def compute_offsets(stitch_counts):
     n = len(stitch_counts)
     beta = [(2 * math.pi / jk[i][1]) if jk[i][1] != 0 else 0.0 for i in range(n)]
     phi_raw = [optimal_offset(j, k) for j, k in jk]
-    phi_cumulative = []
-    running = 0.0
+    phi_cumulative, running = [], 0.0
     for phi in phi_raw:
         running += phi
         phi_cumulative.append(running)
-    phi_reduced = []
-    for i in range(n):
-        if beta[i] != 0:
-            phi_reduced.append(phi_cumulative[i] % beta[i])
-        else:
-            phi_reduced.append(0.0)
+    phi_reduced = [(phi_cumulative[i] % beta[i]) if beta[i] != 0 else 0.0 for i in range(n)]
     return phi_raw, phi_cumulative, phi_reduced
 
 def special_stitch_positions(stitch_counts):
@@ -1171,14 +760,12 @@ def special_stitch_positions(stitch_counts):
         if beta[i] == 0 or jk[i][1] == 0:
             positions.append([])
             continue
-        angles = []
-        angle = phi_reduced[i]
+        angles, angle = [], phi_reduced[i]
         while angle <= 2 * math.pi + 1e-9:
             angles.append(angle)
             angle += beta[i]
         total = stitch_counts[i]
-        indices = sorted(set(round(a / (2 * math.pi) * total) % total for a in angles))
-        positions.append(indices)
+        positions.append(sorted(set(round(a / (2 * math.pi) * total) % total for a in angles)))
     return positions
 
 def build_loop_instructions(loop_number, stitch_count, prev_stitch_count, special_positions):
@@ -1189,8 +776,7 @@ def build_loop_instructions(loop_number, stitch_count, prev_stitch_count, specia
     else:
         special = None
     pos_set = set(special_positions)
-    steps = []
-    i = 0
+    steps, i = [], 0
     while i < stitch_count:
         if special and i in pos_set:
             steps.append(special)
@@ -1206,9 +792,9 @@ def build_loop_instructions(loop_number, stitch_count, prev_stitch_count, specia
 def generate_pattern(stitch_counts, special_positions, closed=False, name=None):
     lines = []
     if name:
-        lines.append(f"Pattern: {name}")
-        lines.append("=" * (len(name) + 9))
-    lines.append("Chain On")
+        lines.append(f"{name}")
+        lines.append("")
+    lines.append("Chain on")
     prev = 0
     for i, count in enumerate(stitch_counts):
         lines.append(build_loop_instructions(i + 1, count, prev, special_positions[i]))
@@ -1216,197 +802,192 @@ def generate_pattern(stitch_counts, special_positions, closed=False, name=None):
     if closed:
         n = len(stitch_counts)
         for j, i in enumerate(range(n - 2, -1, -1)):
-            mirror_count = stitch_counts[i]
-            lines.append(build_loop_instructions(n + j + 1, mirror_count, stitch_counts[i + 1], special_positions[i]))
-    lines.append("Chain Off")
+            lines.append(build_loop_instructions(n + j + 1, stitch_counts[i], stitch_counts[i + 1], special_positions[i]))
+    lines.append("Chain off")
     return lines
 
 def run_generate(fn_str, domain, n_loops, closed, name, stitch_height_cm, stitch_length_cm):
-    import json
     safe_ns = {"np": np, "math": math, "__builtins__": {}}
     try:
         f = eval(f"lambda r: {fn_str}", safe_ns)
         _ = f(0.5)
     except Exception as e:
-        return json.dumps({"error": f"Invalid function: {e}"})
+        return json.dumps({"error": "That profile did not evaluate: %s" % e})
     try:
         radii = compute_loop_radii(f, n_loops, domain)
         counts = radii_to_stitch_counts(radii, f, domain, stitch_height_cm, stitch_length_cm, n_loops)
+        if max(counts) < 1:
+            return json.dumps({"error": "Every loop came out under one stitch. Try a larger radius limit or fewer loops."})
         positions = special_stitch_positions(counts)
-        pattern_lines = generate_pattern(counts, positions, closed=closed, name=name or None)
+        zs = [float(f(r)) for r in radii]
         return json.dumps({
             "counts": counts,
-            "radii": [round(r, 4) for r in radii],
-            "pattern": pattern_lines,
+            "radii": [round(float(r), 5) for r in radii],
+            "zs": [round(z, 5) for z in zs],
+            "positions": positions,
+            "pattern": generate_pattern(counts, positions, closed=closed, name=name or None),
         })
     except Exception as e:
         return json.dumps({"error": str(e)})
-
-print("crochet_gen loaded OK")
 `;
 
-// ── UI helpers ───────────────────────────────────────────────────────────────
-function setStatus(state, text) {
-  const loader = document.getElementById('status-loader');
-  loader.className = 'status-bar-loader ' + state;
-  document.getElementById('status-text').textContent = text;
-}
-
-function showTab(name, btn) {
-  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
-  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-  document.getElementById('tab-' + name).classList.add('active');
-  btn.classList.add('active');
-}
-
-function selectPreset(btn) {
-  if (btn.classList.contains('active')) {
-    btn.classList.remove('active');
-    document.getElementById('fn-input').value = '';
-    document.getElementById('pattern-name').value = '';
-    document.getElementById('fn-input').focus();
-    updatePreview();
-    return;
+async function initPyodide() {
+  try {
+    pyodide = await loadPyodide({ indexURL: 'https://cdn.jsdelivr.net/pyodide/v0.25.0/full/' });
+    setStatus('busy', 'Installing NumPy and SciPy…');
+    await pyodide.loadPackage(['numpy', 'scipy']);
+    await pyodide.runPythonAsync(PYTHON_CODE);
+    setStatus('ready', 'Ready');
+    $('run-btn').disabled = false;
+  } catch (e) {
+    setStatus('error', 'The Python runtime did not load. Reload the page to try again.');
   }
-  document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-  const rawPython = btn.dataset.fn;
-  const friendly = rawPython
-    .replace(/np\.sqrt\(/g, 'sqrt(')
-    .replace(/np\.cos\(/g, 'cos(')
-    .replace(/np\.sin\(/g, 'sin(')
-    .replace(/np\.exp\(/g, 'e^(')
-    .replace(/np\.log\b/g, 'ln')
-    .replace(/np\.pi/g, 'pi')
-    .replace(/\*\*/g, '^');
-  document.getElementById('fn-input').value = friendly;
-  document.getElementById('domain').value = btn.dataset.domain;
-  document.getElementById('pattern-name').value = btn.dataset.name;
-  updatePreview();
 }
 
-function onFnInput() {
-  document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
-  updatePreview();
+// ── presets ──────────────────────────────────────────────────────────────────
+function selectPreset(btn) {
+  const on = btn.getAttribute('aria-pressed') === 'true';
+  document.querySelectorAll('.preset').forEach(b => b.setAttribute('aria-pressed', 'false'));
+  if (on) { $('fn-input').focus(); return; }
+  btn.setAttribute('aria-pressed', 'true');
+  $('fn-input').value = btn.dataset.fn;
+  $('domain').value = btn.dataset.domain;
+  $('pattern-name').value = btn.dataset.name;
+  updateEcho();
 }
 
-function colorizePattern(lines) {
-  return lines.map(line => {
-    if (line.startsWith('Pattern:')) return `<span class="header-line">${escHtml(line)}</span>`;
-    if (line.startsWith('=')) return `<span class="divider-line">${escHtml(line)}</span>`;
-    if (line === 'Chain On' || line === 'Chain Off') return `<span class="chain-line">${escHtml(line)}</span>`;
-    if (line.startsWith('Loop')) {
-      return escHtml(line)
-        .replace(/\binc\b/g, '<span class="inc-word">inc</span>')
-        .replace(/\bdec\b/g, '<span class="dec-word">dec</span>')
-        .replace(/\bsc\d+\b/g, m => `<span class="sc-word">${m}</span>`);
+// ── stitch chart: concentric rings, one dot per stitch ───────────────────────
+function renderRings(counts, positions) {
+  const S = 320, c = S / 2, rMax = 143, n = counts.length;
+  const total = counts.reduce((a, b) => a + b, 0);
+  const dense = total > 2600;
+  const out = [];
+
+  for (let i = 0; i < n; i++) {
+    const R = rMax * (i + 1) / n;
+    out.push(`<circle class="ring-line" cx="${c}" cy="${c}" r="${R.toFixed(2)}"/>`);
+  }
+
+  for (let i = 0; i < n; i++) {
+    const R = rMax * (i + 1) / n;
+    const k = counts[i];
+    if (k < 1) continue;
+    const prev = i === 0 ? 0 : counts[i - 1];
+    const cls = k > prev ? 'ring-inc' : (k < prev ? 'ring-dec' : 'ring-dot');
+    const special = new Set(positions[i] || []);
+    const step = Math.max(1, Math.round(k / 160));
+    for (let j = 0; j < k; j++) {
+      const isSpecial = special.has(j);
+      if (dense && !isSpecial && j % step !== 0) continue;
+      const a = -Math.PI / 2 + (2 * Math.PI * j) / k;
+      const x = (c + R * Math.cos(a)).toFixed(2);
+      const y = (c + R * Math.sin(a)).toFixed(2);
+      out.push(isSpecial
+        ? `<circle class="${cls}" cx="${x}" cy="${y}" r="2.6"/>`
+        : `<circle class="ring-dot" cx="${x}" cy="${y}" r="1.25"/>`);
     }
-    return escHtml(line);
-  }).join('\n');
+  }
+
+  $('rings').innerHTML = out.join('');
+  $('rings-cap').textContent = dense
+    ? 'Each ring is one loop, read from the centre out. Plain stitches are thinned out at this density; every shaping stitch is shown.'
+    : 'Each ring is one loop, each dot one stitch, read from the centre out.';
 }
 
-function escHtml(s) {
-  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+// ── cross-section: profile and its mirror, chords for loops ──────────────────
+function renderProfile(radii, zs) {
+  const S = 320, pad = 26;
+  const rMax = Math.max(...radii);
+  const zMin = Math.min(0, ...zs), zMax = Math.max(0, ...zs);
+  const zSpan = (zMax - zMin) || 1;
+  const sx = (S - 2 * pad) / (2 * rMax);
+  const sy = (S - 2 * pad) / zSpan;
+  const s = Math.min(sx, sy);
+  const cx = S / 2;
+  const cy = pad + (zMax - zMin) * s / 2;
+  const X = r => cx + r * s;
+  const Y = z => cy + ((zMax - zMin) / 2 - (z - zMin)) * s;
+
+  const out = [`<line class="prof-axis" x1="${cx}" y1="${pad - 8}" x2="${cx}" y2="${S - pad + 8}"/>`];
+
+  for (let i = 0; i < radii.length; i++) {
+    out.push(`<line class="prof-chord" x1="${X(-radii[i]).toFixed(2)}" y1="${Y(zs[i]).toFixed(2)}" x2="${X(radii[i]).toFixed(2)}" y2="${Y(zs[i]).toFixed(2)}"/>`);
+  }
+
+  const right = radii.map((r, i) => `${X(r).toFixed(2)},${Y(zs[i]).toFixed(2)}`);
+  const left = radii.map((r, i) => `${X(-r).toFixed(2)},${Y(zs[i]).toFixed(2)}`).reverse();
+  out.push(`<polyline class="prof-curve" points="${left.join(' ')} ${right.join(' ')}"/>`);
+
+  for (let i = 0; i < radii.length; i++) {
+    out.push(`<circle class="prof-node" cx="${X(radii[i]).toFixed(2)}" cy="${Y(zs[i]).toFixed(2)}" r="2.6"/>`);
+    out.push(`<circle class="prof-node" cx="${X(-radii[i]).toFixed(2)}" cy="${Y(zs[i]).toFixed(2)}" r="2.6"/>`);
+  }
+
+  $('profile').innerHTML = out.join('');
+}
+
+function clearPlates(msg) {
+  $('rings').innerHTML = `<text class="plate-empty" x="160" y="160" text-anchor="middle">${msg}</text>`;
+  $('profile').innerHTML = `<text class="plate-empty" x="160" y="160" text-anchor="middle">${msg}</text>`;
+}
+
+// ── measures ─────────────────────────────────────────────────────────────────
+function renderMeasures(counts) {
+  const max = Math.max(...counts);
+  const stitchL = parseFloat($('stitch-l').value);
+  $('m-loops').textContent = counts.length;
+  $('m-total').textContent = counts.reduce((a, b) => a + b, 0).toLocaleString();
+  $('m-max').textContent = max;
+  $('m-diam').textContent = (max * stitchL / Math.PI).toFixed(1) + ' cm';
+  $('counts').innerHTML = '<span class="lead">Stitches per loop</span>' +
+    counts.map((c, i) => `<span><i>${i + 1}</i> ${c}</span>`).join('');
+}
+
+// ── pattern text ─────────────────────────────────────────────────────────────
+function esc(s) { return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+
+function colorize(lines) {
+  return lines.map((line, i) => {
+    if (line === '') return '';
+    if (line === 'Chain on' || line === 'Chain off') return `<span class="edge">${esc(line)}</span>`;
+    if (i === 0 && !line.startsWith('Loop') && !line.startsWith('Chain')) return `<span class="ttl">${esc(line)}</span>`;
+    return esc(line)
+      .replace(/^(Loop \d+:)/, '<span class="loopno">$1</span>')
+      .replace(/\binc\b/g, '<span class="inc">inc</span>')
+      .replace(/\bdec\b/g, '<span class="dec">dec</span>');
+  }).join('\n');
 }
 
 function copyPattern() {
   if (!lastPattern) return;
   navigator.clipboard.writeText(lastPattern).then(() => {
-    const btn = document.getElementById('copy-btn');
-    btn.textContent = 'copied';
-    setTimeout(() => btn.textContent = 'copy pattern', 1500);
+    $('copy-btn').textContent = 'Copied';
+    setTimeout(() => $('copy-btn').textContent = 'Copy', 1600);
   });
 }
 
-// ── Chart — flat, single accent color with opacity steps ─────────────────────
-function renderChart(counts) {
-  const ctx = document.getElementById('stitch-chart').getContext('2d');
-  // Stepped opacity using the accent color — no rainbow RGB formula
-  const base = [190, 242, 100]; // --accent2 approx
-  const colors = counts.map((_, i) => {
-    const t = i / Math.max(counts.length - 1, 1);
-    const alpha = 0.35 + t * 0.55;
-    return `rgba(${base[0]},${base[1]},${base[2]},${alpha.toFixed(2)})`;
-  });
-  if (chartInstance) chartInstance.destroy();
-  chartInstance = new Chart(ctx, {
-    type: 'bar',
-    data: {
-      labels: counts.map((_, i) => `L${i + 1}`),
-      datasets: [{
-        data: counts,
-        backgroundColor: colors,
-        borderColor: 'rgba(190,242,100,0.15)',
-        borderWidth: 1,
-        borderRadius: 2,
-        borderSkipped: false
-      }]
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: {
-        legend: { display: false },
-        tooltip: {
-          backgroundColor: '#0b160e',
-          borderColor: '#1e2e21',
-          borderWidth: 1,
-          titleColor: '#bef264',
-          bodyColor: '#dde4f0',
-          padding: 10,
-          callbacks: { label: ctx => ` ${ctx.parsed.y} stitches` }
-        }
-      },
-      scales: {
-        x: {
-          ticks: { color: '#4d6455', font: { family: 'DM Mono', size: 10 }, maxRotation: 0 },
-          grid: { color: '#162019' },
-          border: { color: '#162019' }
-        },
-        y: {
-          ticks: { color: '#4d6455', font: { family: 'DM Mono', size: 10 } },
-          grid: { color: '#162019' },
-          border: { color: '#162019' }
-        }
-      }
-    }
-  });
-}
-
-// ── Stats ─────────────────────────────────────────────────────────────────────
-function renderStats(counts, radii) {
-  document.getElementById('stat-loops').textContent = counts.length;
-  document.getElementById('stat-total').textContent = counts.reduce((a,b)=>a+b,0).toLocaleString();
-  document.getElementById('stat-max').textContent = Math.max(...counts);
-  const stitchL = parseFloat(document.getElementById('stitch-l').value);
-  const estDiam = (Math.max(...counts) * stitchL / Math.PI).toFixed(1);
-  document.getElementById('stat-diam').textContent = estDiam + ' cm';
-  document.getElementById('counts-row').innerHTML = counts.map((c, i) => `
-    <span class="count-chip">
-      <span class="chip-n">L${i+1}</span>
-      <span class="chip-v">${c}</span>
-    </span>
-  `).join('');
-}
-
-// ── Generate ──────────────────────────────────────────────────────────────────
+// ── generate ─────────────────────────────────────────────────────────────────
 async function generate() {
   if (!pyodide) return;
 
-  const rawInput = document.getElementById('fn-input').value.trim();
-  const fnStr = translateToNp(rawInput);
-  const domain = parseFloat(document.getElementById('domain').value);
-  const nLoops = parseInt(document.getElementById('n-loops').value);
-  const closed = document.getElementById('closed-toggle').checked;
-  const name = document.getElementById('pattern-name').value.trim();
-  const stitchH = parseFloat(document.getElementById('stitch-h').value);
-  const stitchL = parseFloat(document.getElementById('stitch-l').value);
+  const raw = $('fn-input').value.trim();
+  const fnStr = translateToNp(raw);
+  const domain = parseFloat($('domain').value);
+  const nLoops = parseInt($('n-loops').value, 10);
 
-  if (!fnStr || isNaN(domain) || isNaN(nLoops)) return;
+  if (!fnStr) {
+    $('echo').classList.add('bad');
+    $('echo-val').textContent = 'enter a profile first';
+    $('fn-input').focus();
+    return;
+  }
+  if (!isFinite(domain) || domain <= 0 || !isFinite(nLoops) || nLoops < 2) {
+    setStatus('error', 'Radius limit must be above zero and loops at least 2.');
+    return;
+  }
 
-  setStatus('loading', 'computing…');
-  document.getElementById('gen-btn').disabled = true;
-  document.getElementById('computing-notice').classList.add('visible');
+  setStatus('busy', 'Working out the loop radii…');
+  $('run-btn').disabled = true;
 
   try {
     const resultJson = await pyodide.runPythonAsync(`
@@ -1414,52 +995,52 @@ run_generate(
     ${JSON.stringify(fnStr)},
     ${domain},
     ${nLoops},
-    ${closed ? 'True' : 'False'},
-    ${JSON.stringify(name)},
-    ${stitchH},
-    ${stitchL}
-)
-`);
+    ${$('closed-toggle').checked ? 'True' : 'False'},
+    ${JSON.stringify($('pattern-name').value.trim())},
+    ${parseFloat($('stitch-h').value)},
+    ${parseFloat($('stitch-l').value)}
+)`);
     const result = JSON.parse(resultJson);
 
     if (result.error) {
-      document.getElementById('pattern-out').innerHTML =
-        `<div class="error-box">error: ${escHtml(result.error)}</div>`;
-      setStatus('error', 'error — check your function');
-    } else {
-      lastPattern = result.pattern.join('\n');
-      lastCounts = result.counts;
-      document.getElementById('pattern-out').innerHTML =
-        colorizePattern(result.pattern) +
-        '<div class="computing-notice" id="computing-notice"></div>';
-      renderChart(result.counts);
-      renderStats(result.counts, result.radii);
-      const total = result.counts.reduce((a,b)=>a+b,0);
-      setStatus('ready', `${result.counts.length} loops · ${total.toLocaleString()} stitches`);
+      $('pattern').innerHTML = `<span class="fail">${esc(result.error)}</span>`;
+      $('copy-btn').disabled = true;
+      lastPattern = '';
+      clearPlates('nothing to draw');
+      setStatus('error', 'Nothing generated. See the message below.');
+      return;
     }
+
+    lastPattern = result.pattern.join('\n');
+    $('pattern').innerHTML = colorize(result.pattern);
+    $('copy-btn').disabled = false;
+    renderRings(result.counts, result.positions);
+    renderProfile(result.radii, result.zs);
+    renderMeasures(result.counts);
+    const total = result.counts.reduce((a, b) => a + b, 0);
+    setStatus('ready', `${result.counts.length} loops, ${total.toLocaleString()} stitches`);
   } catch (e) {
-    document.getElementById('pattern-out').innerHTML =
-      `<div class="error-box">runtime error:\n${escHtml(e.toString())}</div>`;
-    setStatus('error', 'runtime error');
+    $('pattern').innerHTML = `<span class="fail">${esc(e.toString())}</span>`;
+    clearPlates('nothing to draw');
+    setStatus('error', 'The generator stopped partway through.');
   } finally {
-    document.getElementById('gen-btn').disabled = false;
-    document.getElementById('computing-notice').classList.remove('visible');
+    $('run-btn').disabled = false;
   }
 }
 
-// ── Boot ──────────────────────────────────────────────────────────────────────
-document.addEventListener('DOMContentLoaded', () => {
-  const fnInput = document.getElementById('fn-input');
-  fnInput.addEventListener('input', onFnInput);
-  fnInput.addEventListener('keydown', e => {
-    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); generate(); }
-  });
-  document.getElementById('pattern-name').addEventListener('keydown', e => {
-    if (e.key === 'Enter') generate();
-  });
-  updatePreview();
+// ── boot ─────────────────────────────────────────────────────────────────────
+document.querySelectorAll('.preset').forEach(b => b.addEventListener('click', () => selectPreset(b)));
+$('fn-input').addEventListener('input', () => {
+  document.querySelectorAll('.preset').forEach(b => b.setAttribute('aria-pressed', 'false'));
+  updateEcho();
 });
+$('fn-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); generate(); }
+});
+$('copy-btn').addEventListener('click', copyPattern);
 
+selectPreset(document.querySelector('.preset'));
+setStatus('busy', 'Loading the Python runtime…');
 initPyodide();
 </script>
 </body>
